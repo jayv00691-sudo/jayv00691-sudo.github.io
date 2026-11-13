@@ -70,8 +70,8 @@
 
 <!-- ===== 第一页 · 进行时 ===== -->
 <section class="page on" id="page-live">
-  <h2>牌局信息 <span class="en">Game Info</span></h2>
-  <table id="infoTable"></table>
+  <h2>牌局信息 <span class="en">Session</span></h2>
+  <div class="cards" id="sessionStats"></div>
   <h2>当场流水 <span class="en">Live Entries（打牌当下逐笔录入）</span></h2>
   <table id="flowTable"></table>
   <div class="check" id="liveCheck"></div>
@@ -101,6 +101,8 @@
     <div id="mirror"></div>
     <div class="check" id="zeroCheck" style="margin-top:8px"></div>
   </div>
+  <h2>局头参数 <span class="en">Host Setup（备用金、份额、开销都在这一页）</span></h2>
+  <table id="hostParams"></table>
   <div id="hostBills"></div>
   <h2>另说 <span class="en">Separate Items（不进局头金额）</span></h2>
   <table id="tSep"></table>
@@ -114,6 +116,10 @@
 // ===== 原始数据（唯一输入源）=====
 const S = {
   date: "2026-11-12",
+  sessionName: "2026-11-12 那场",
+  startTime: "",      // 开始时间（进行时填，计时从这里算）
+  totalChips: "",     // 总筹码（本场码房筹码总量，进行时填）
+  status: "已结束",   // 牌局状态：进行中 / 已结束
   hosts: [ // 局头：备用金、RAKE 份额 %（本场两个，场场可增减）
     {name:"Arthur", float:10000, share:50},
     {name:"James",  float:45900, share:50}
@@ -213,14 +219,15 @@ function hostBill(H, C){
 function render(){
   const C = calc();
   /* ---------- 第一页 · 进行时 ---------- */
-  let ih = row("日期 Date", 0, {html: S.date});
-  C.hosts.forEach(H=>{
-    ih += row(`局头 ${H.name} · 备用金 Float`, H.float, {html: inp(`hf.${H.name}`, H.float)});
-    ih += row(`局头 ${H.name} · RAKE 份额 %`, H.share, {html: inp(`hs.${H.name}`, H.share, "pct")});
-  });
-  ih += row("登记 RAKE（实际收上来登记的）", S.actualRake, {html: inp("actualRake", S.actualRake)});
-  ih += row(`开销 Expenses（房租、点餐，付给 ${S.expenseHost}）`, S.expense, {html: inp("expense", S.expense)});
-  $("infoTable").innerHTML = ih;
+  $("sessionStats").innerHTML = `
+    <div class="card hero"><div class="k">场次 Session</div><div class="v" style="font-size:19px">${S.sessionName}</div><div class="s">局头 ${S.hosts.map(hst=>hst.name).join(" · ")}</div></div>
+    <div class="card"><div class="k">开始时间 Start</div><div class="v" style="font-size:16px"><input type="datetime-local" data-p="startTime" value="${S.startTime}" style="width:190px"></div><div class="s">开局时填</div></div>
+    <div class="card"><div class="k">计时 Timer</div><div class="v" id="timerVal">—</div><div class="s">从开始时间起算</div></div>
+    <div class="card"><div class="k">总筹码 Total Chips</div><div class="v"><input type="number" data-p="totalChips" value="${S.totalChips}" placeholder="—" style="width:120px"></div><div class="s">码房本场筹码总量</div></div>
+    <div class="card"><div class="k">人数 Players</div><div class="v">${S.players.length}</div><div class="s">本场玩家</div></div>
+    <div class="card"><div class="k">牌局状态 Status</div><div class="v" style="font-size:18px"><select data-p="status" style="font-size:16px;padding:4px">
+      <option ${S.status==="进行中"?"selected":""}>进行中</option>
+      <option ${S.status==="已结束"?"selected":""}>已结束</option></select></div><div class="s">${S.status}</div></div>`;
   let h = `<tr class="sec"><td>对象</td><td class="n">金额（成绩）</td></tr>`;
   h += sub("玩家 Players");
   S.players.forEach(p=>h+=row(p[0], p[1], {signed:true, html: inp(`pl.${p[0]}`, p[1])}));
@@ -231,7 +238,7 @@ function render(){
   h += row("按摩 Massage", S.massage, {signed:true, html: inp("massage", S.massage)});
   h += row("局内合计（进行时）", C.grand, {cls:"grand", signed:true});
   $("flowTable").innerHTML = h;
-  $("liveCheck").innerHTML = `进行时合计：玩家 ${fmtS(C.playersSum)} ＋ 保险 ${fmtS(S.insurance)} ＋ 小费 ${fmtS(C.tipSum)} ＝ 局内合计 <b>${fmtS(C.grand)}</b>，即统算 RAKE <b>${fmt(C.bookRake)}</b>。打完到第二页核对闭环。`;
+  $("liveCheck").innerHTML = `进行时合计：玩家 ${fmtS(C.playersSum)} ＋ 保险 ${fmtS(S.insurance)} ＋ 小费 ${fmtS(C.tipSum)} ＝ 局内合计 <b>${fmtS(C.grand)}</b>。打完到第二页核对闭环。`;
 
   /* ---------- 第二页 · 本场核算 ---------- */
   const kpi = [
@@ -297,7 +304,7 @@ function render(){
       row("小费（荷官+按摩）", C.tipSum, {signed:true}) +
       row("局内合计", C.grand, {cls:"tot", signed:true}) +
       row("统算 RAKE（= −局内合计）", C.bookRake, {cls:"grand"}) +
-      row("登记 RAKE", S.actualRake, {}) +
+      row("登记 RAKE（实际收上来登记的）", S.actualRake, {html: inp("actualRake", S.actualRake)}) +
       row("RAKE 差额（统算 − 登记）", C.rakeDiff, {cls: C.rakeDiff===0 ? "tot" : "grand"});
   $("tLoop").innerHTML = h;
   $("loopCheck").innerHTML =
@@ -334,6 +341,13 @@ function render(){
     ? `全部局头金额合计 ＝ <b>0</b> <span class="ok">✓ 对平</span>`
     : `<span class="bad">✗ 局头金额对不平，差 ${fmt(totalAmt)}（检查 RAKE 份额合计是否 = 100%）</span>`) +
     (moves.length ? `<br>局头之间结算：${moves.join("；")}` : "");
+  let ph = "";
+  C.hosts.forEach(H=>{
+    ph += row(`局头 ${H.name} · 备用金 Float`, H.float, {html: inp(`hf.${H.name}`, H.float)});
+    ph += row(`局头 ${H.name} · RAKE 份额 %`, H.share, {html: inp(`hs.${H.name}`, H.share, "pct")});
+  });
+  ph += row(`开销 Expenses（房租、点餐，付给 ${S.expenseHost}）`, S.expense, {html: inp("expense", S.expense)});
+  $("hostParams").innerHTML = ph;
   $("hostBills").innerHTML = C.hosts.map(H=>
     `<h2>${H.name} 团队核算 <span class="en">Host ${H.name}（挂在他名下结账的人）</span></h2><table>${hostBill(H, C)}</table>`
   ).join("");
@@ -341,10 +355,27 @@ function render(){
     C.hosts.map(H=>row(`备用金退回 ${H.name} Float（原样退回）`, H.float, {})).join("") +
     row("RAKE 差额（统算 − 登记，现金差额，单独处理）", C.rakeDiff, {cls:"tot"});
   bindInputs();
+  tickTimer();
 }
+function tickTimer(){
+  const el = $("timerVal"); if(!el) return;
+  if(!S.startTime){ el.textContent = "—"; return; }
+  const start = new Date(S.startTime).getTime();
+  if(isNaN(start)){ el.textContent = "—"; return; }
+  if(S.status !== "进行中"){ el.textContent = "已结束"; return; }
+  let sec = Math.max(0, Math.floor((Date.now()-start)/1000));
+  const hh = String(Math.floor(sec/3600)).padStart(2,"0");
+  const mm = String(Math.floor(sec%3600/60)).padStart(2,"0");
+  const ss = String(sec%60).padStart(2,"0");
+  el.textContent = `${hh}:${mm}:${ss}`;
+}
+setInterval(tickTimer, 1000);
 function bindInputs(){
-  document.querySelectorAll("input[data-p]").forEach(el=>{
+  document.querySelectorAll("input[data-p],select[data-p]").forEach(el=>{
     el.addEventListener("change", ()=>{
+      if(el.dataset.p==="startTime"){ S.startTime = el.value; render(); return; }
+      if(el.dataset.p==="status"){ S.status = el.value; render(); return; }
+      if(el.dataset.p==="totalChips"){ S.totalChips = el.value; return; }
       const v = parseFloat(el.value); if(isNaN(v)) return;
       const [kind, key] = el.dataset.p.split(".");
       if(kind==="pl"){ const p = S.players.find(x=>x[0]===key); p[1]=v; }
