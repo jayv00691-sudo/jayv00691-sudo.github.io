@@ -130,7 +130,7 @@ const S = {
   shares: [["Kevin",20],["Bill",20],["James",25],["Arthur",35]], // 保险公司股东 %
   dealers: [["WeiWei",1285],["Lyne",3565],["Linna",1560]],       // 荷官小费
   massage: 1475,                                                   // 按摩小费
-  actualRake: 36500,   // 实收 RAKE
+  actualRake: 36500,   // 登记 RAKE
   expense: 2800,       // 开销（房租、点餐，付给 James）
   arthurFloat: 10000,  // Arthur 备用金
   jamesFloat: 45900    // James 备用金
@@ -165,8 +165,8 @@ function calc(){
   const shareAmt = {}; S.shares.forEach(([n,p])=>shareAmt[n]=S.insurance*p/100);
   const tipSum = S.dealers.reduce((a,d)=>a+d[1],0) + S.massage; // 小费合计（荷官+按摩）
   const grand = upSum+downSum+S.insurance+tipSum;
-  const bookRake = -grand;                        // 账面 RAKE
-  const surplus = bookRake - S.actualRake;        // 多余的钱
+  const bookRake = -grand;                        // 统算 RAKE
+  const surplus = bookRake - S.actualRake;        // RAKE 差额
   const netRake = S.actualRake - S.expense;       // 净 RAKE
   const arthurRake = netRake/2, jamesRake = netRake/2 + surplus;
   const personal = {}; S.players.forEach(p=>personal[p[0]]=p[1]); // 成员（成绩）
@@ -198,11 +198,10 @@ function teamCard(name, T, net){
 }
 function renderDash(C){
   const kpi = [
-    ["合计 Total", C.grand, "全场成绩合计", true],
-    ["账面 RAKE", C.bookRake, "＝ −合计", false],
-    ["实收 RAKE", S.actualRake, "实际收上来的 Actual", false],
-    ["多余的钱 Surplus", C.surplus, "账面 − 实收，归 James", false],
-    ["净 RAKE", C.netRake, "实收 − 开销 " + fmt(S.expense), false]
+    ["统算 RAKE", C.bookRake, "系统统算 ＝ −全场合计", true],
+    ["登记 RAKE", S.actualRake, "实际收上来登记的 Actual", false],
+    ["RAKE 差额", C.surplus, "统算 − 登记，归 James", false],
+    ["净 RAKE", C.netRake, "登记 − 开销 " + fmt(S.expense), false]
   ];
   $("kpis").innerHTML = kpi.map(([k,v,s,hero])=>
     `<div class="card${hero?" hero":""}"><div class="k">${k}</div><div class="v ${cls(v)}">${fmtS(v)}</div><div class="s">${s}</div></div>`).join("");
@@ -241,7 +240,7 @@ function renderDash(C){
   $("rakeStack").innerHTML = parts.map(([l,v,c])=>
     `<div style="width:${v/tot*100}%;background:${c}">${v/tot>0.12?l:""}</div>`).join("");
   $("rakeLegend").innerHTML = parts.map(([l,v,c])=>`<span class="dot" style="background:${c}"></span>${l}`).join("") +
-    `<br><span class="formula">James 的 RAKE ＝ 净 RAKE 50% ${fmt(C.netRake/2)} ＋ 多余的钱 ${fmt(C.surplus)}</span>`;
+    `<br><span class="formula">James 的 RAKE ＝ 净 RAKE 50% ${fmt(C.netRake/2)} ＋ RAKE 差额 ${fmt(C.surplus)}</span>`;
 }
 
 // ===== 团队账单（两队共用同一个模板）=====
@@ -296,16 +295,16 @@ function render(){
   h += sec("四、合计" + EN("Total"));
   h += row("账面总计 Grand Total", C.grand, {cls:"grand", signed:true});
   h += sec("五、RAKE");
-  h += row("账面 RAKE（= −合计）", C.bookRake, {});
-  h += row("实收 RAKE Actual", S.actualRake, {html: inp("actualRake", S.actualRake)});
-  h += row("多余的钱 Surplus（账面 − 实收，归 James）", C.surplus, {cls:"tot"});
+  h += row("统算 RAKE（= −合计）", C.bookRake, {});
+  h += row("登记 RAKE Actual", S.actualRake, {html: inp("actualRake", S.actualRake)});
+  h += row("RAKE 差额（统算 − 登记，归 James）", C.surplus, {cls:"tot"});
   h += row("开销 Expenses（房租、点餐，付给 James）", S.expense, {html: inp("expense", S.expense)});
-  h += row("净 RAKE Net（实收 − 开销）", C.netRake, {cls:"tot"});
+  h += row("净 RAKE Net（登记 − 开销）", C.netRake, {cls:"tot"});
   h += sub("RAKE 分配 Allocation");
   h += row("┗ Arthur 团队（净 RAKE 50%）", C.arthurRake, {});
-  h += row("┗ James 团队（净 RAKE 50% ＋ 多余的钱）", C.jamesRake, {});
+  h += row("┗ James 团队（净 RAKE 50% ＋ RAKE 差额）", C.jamesRake, {});
   h += row("┗ 开销（James）", S.expense, {});
-  h += row("分配合计（应 = 账面 RAKE）", C.arthurRake + C.jamesRake + S.expense, {cls:"tot"});
+  h += row("分配合计（应 = 统算 RAKE）", C.arthurRake + C.jamesRake + S.expense, {cls:"tot"});
   const t1b = document.createElement("table");
   t1b.innerHTML = h; t1b.id = "t1b";
   det.after(t1b);
@@ -319,7 +318,7 @@ function render(){
   $("checkA").innerHTML = `对账：成员（成绩）${fmtS(C.A.memberSum)} ＋ 备用金 ${fmt(C.A.floatV)} ＋ RAKE ${fmt(C.A.rake)} ＋ 开销 ${fmt(C.A.expense)} ＝ 应付 <b>${fmt(C.A.total)}</b>`;
   $("tJ").innerHTML = teamBill(C.J, C, {
     floatKey: "jamesFloat", captainRow: "James（股东）",
-    rakeLabel: "RAKE（净 RAKE 50% ＋ 多余的钱）",
+    rakeLabel: "RAKE（净 RAKE 50% ＋ RAKE 差额）",
     expenseNote: "（房租、点餐，归 James）", expenseInput: true,
     netLabel: "James 净额 Net（股东分担 ＋ RAKE ＋ 开销）", net: C.jamesNet
   });
