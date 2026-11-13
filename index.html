@@ -97,7 +97,7 @@
 
 <!-- ===== 第三页 · 局头团队核算 ===== -->
 <section class="page" id="page-hosts">
-  <div class="panel"><h3>局头金额 <span class="en">Host Amounts（全部局头相加必须 = 0）</span></h3>
+  <div class="panel"><h3>局头金额 <span class="en">Host Amounts</span></h3>
     <div id="mirror"></div>
     <div class="check" id="zeroCheck" style="margin-top:8px"></div>
   </div>
@@ -108,7 +108,7 @@
   <table id="tSep"></table>
 </section>
 
-<p class="note">局头不是固定的：本场有几个局头就出几张账单。每个玩家只挂在一位局头名下结账（本场：Arthur 名下 Arthur、Lu、KL、William、Zhuang；其余在 James 名下）。公共项（RAKE、小费）按各局头的 RAKE 份额分，分完所有局头金额相加恒为 0。</p>
+<p class="note">局头不是固定的：本场有几个局头就出几张账单。每个玩家只挂在一位局头名下结账（本场：Arthur 名下 Arthur、Lu、KL、William、Zhuang；其余在 James 名下）。局头账只有三块：成员（成绩）、RAKE 分配、开销——小费在第二页局内闭环里已经结清，永不进局头账。</p>
 </div>
 
 <script>
@@ -184,12 +184,11 @@ function calc(){
     const ownShare = isPlayer ? 0 : (shareAmt[hst.name]||0); // 局头没打牌时，他的股东分担单列一行
     const memberSum = members.reduce((a,p)=>a+personal[p[0]],0) + ownShare;
     const rakeAmt = rakePool * hst.share/100;
-    const tipAmt = tipSum * hst.share/100;
     const expAmt = (S.expenseHost===hst.name) ? S.expense : 0;
-    const amount = memberSum + rakeAmt + tipAmt + expAmt;
+    const amount = memberSum + rakeAmt + expAmt; // 小费不进局头账：已在第二页局内闭环结清
     const ownPersonal = isPlayer ? personal[hst.name] : ownShare;
     const net = ownPersonal + rakeAmt + expAmt;      // 局头净额
-    return {...hst, members, ownShare, isPlayer, memberSum, rakeAmt, tipAmt, expAmt, amount, net};
+    return {...hst, members, ownShare, isPlayer, memberSum, rakeAmt, expAmt, amount, net};
   });
   return {score,up,down,upSum,downSum,playersSum,shareAmt,dealerSum,tipSum,grand,bookRake,rakeDiff,
           personal,rakePool,hosts};
@@ -209,7 +208,6 @@ function hostBill(H, C){
   h += row("成员（成绩）合计", H.memberSum, {cls:"tot", signed:true});
   h += sec("局内公共项分配" + EN("Shared Items"));
   h += row(`RAKE 份额（统算 RAKE − 开销，× ${H.share}%）`, H.rakeAmt, {});
-  h += row(`小费（荷官+按摩，× ${H.share}%）`, H.tipAmt, {});
   h += row("开销 Expense" + (H.expAmt ? "（房租、点餐，归他）" : ""), H.expAmt, {});
   h += row(`${H.name} 金额（${H.amount>=0?"应收":"应付"}）Host Amount`, H.amount, {cls:"grand", signed:true});
   h += row(`${H.name} 净额 Net`, H.net, {cls:"tot", signed:true});
@@ -337,9 +335,10 @@ function render(){
     if(debtors[di].amt<0.005) di++;
     if(creditors[ci].amt<0.005) ci++;
   }
-  $("zeroCheck").innerHTML = (zero
-    ? `全部局头金额合计 ＝ <b>0</b> <span class="ok">✓ 对平</span>`
-    : `<span class="bad">✗ 局头金额对不平，差 ${fmt(totalAmt)}（检查 RAKE 份额合计是否 = 100%）</span>`) +
+  const loopSettled = Math.abs(totalAmt + C.tipSum) < 0.005;
+  $("zeroCheck").innerHTML = (loopSettled
+    ? `全部局头金额合计 ＝ <b>${fmtS(totalAmt)}</b>，差的正好是小费 ${fmt(C.tipSum)}——小费已在第二页局内闭环里结清（输家覆盖、直付荷官和按摩），不进局头账。局头金额 ＋ 小费 ＝ <b>0</b> <span class="ok">✓ 全场对平</span>`
+    : `<span class="bad">✗ 对不平：局头金额合计 ${fmtS(totalAmt)}，与小费 ${fmt(C.tipSum)} 对不上（检查 RAKE 份额合计是否 = 100%）</span>`) +
     (moves.length ? `<br>局头之间结算：${moves.join("；")}` : "");
   let ph = "";
   C.hosts.forEach(H=>{
