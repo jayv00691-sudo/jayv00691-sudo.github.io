@@ -11,8 +11,10 @@
   .wrap{max-width:920px;margin:0 auto}
   h1{font-size:23px;margin:4px 0 2px}
   h2{font-size:19px;margin:30px 0 10px;border-left:4px solid var(--green);padding-left:8px}
+  h2 .en{font-size:13px;color:#888;font-weight:400;margin-left:6px}
   .note{color:#555;font-size:14px;line-height:1.6}
   .note b{background:var(--inp);border:1px solid var(--line);padding:0 4px;border-radius:3px}
+  .en{color:#888;font-size:.82em;font-weight:400}
   /* KPI cards */
   .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0 4px}
   .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
@@ -43,7 +45,8 @@
   table{width:100%;border-collapse:collapse;background:#fff;font-size:16px}
   th,td{border:1px solid var(--line);padding:6px 10px;text-align:left}
   td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-  tr.sec td{background:var(--head);font-weight:700}
+  tr.sec td{background:var(--head);font-weight:700;font-size:17px}
+  tr.sub td{background:#fafafa;color:#555;font-weight:600}
   tr.tot td{background:var(--tot);font-weight:700}
   tr.grand td{background:var(--grand);font-weight:800;font-size:17px}
   input{width:110px;text-align:right;font-size:16px;padding:3px 6px;border:1px solid #c9a227;border-radius:4px;background:var(--inp);font-variant-numeric:tabular-nums}
@@ -52,47 +55,51 @@
   .formula{color:#777;font-size:13px}
   .check{margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:15px;line-height:1.7}
   .ok{color:var(--green);font-weight:700}.bad{color:var(--red);font-weight:700}
+  details.sharebox{border:1px solid var(--line);border-radius:6px;background:#fff;margin:-1px 0 0;padding:0}
+  details.sharebox summary{cursor:pointer;padding:8px 10px;font-weight:600;background:#fafafa;border-radius:6px;list-style-position:inside}
+  details.sharebox table{border:none}
+  details.sharebox td{border-left:none;border-right:none}
   @media(max-width:560px){table{font-size:14px}input{width:88px}.card .v{font-size:20px}}
 </style>
 </head>
 <body>
 <div class="wrap">
-<h1>2026-11-12 牌局结算 · 仪表盘</h1>
-<p class="note">规则：<b>黄色格子</b>（在下方表格里）是原始数字，可以改；仪表盘和所有总数都是公式自动算的，改任何一格，全页跟着变。本表只记牌局本身的账，不含任何私人欠债抵扣。</p>
+<h1>2026-11-12 牌局结算 · 仪表盘 <span class="en">Settlement Dashboard</span></h1>
+<p class="note">规则：<b>黄色格子</b>（在下方表格里）是原始数字，可以改；仪表盘和所有总数都是公式自动算的，改任何一格，全页跟着变。本表只记牌局本身的账，不含任何私人欠债抵扣。顺序：玩家 → 保险公司 → 荷官 → 杂项 → 合计 → RAKE。</p>
 
 <div class="cards" id="kpis"></div>
 
-<h2>两位局头</h2>
+<h2>团队 <span class="en">Teams</span></h2>
 <div class="hosts" id="hosts"></div>
 
-<h2>可视化</h2>
-<div class="panel"><h3>玩家成绩（绿＝赢，红＝输）</h3><div id="scoreChart"></div></div>
-<div class="panel"><h3>保险分担（保险总成绩 <span id="insTotal"></span>）</h3>
+<h2>可视化 <span class="en">Charts</span></h2>
+<div class="panel"><h3>玩家成绩 <span class="en">Player Scores（绿＝赢 Win，红＝输 Lose）</span></h3><div id="scoreChart"></div></div>
+<div class="panel"><h3>保险公司 · 股东分担 <span class="en">Insurance Shareholders（保险成绩 <span id="insTotal"></span>）</span></h3>
   <div class="donut-wrap"><div id="insDonut"></div><div class="legend" id="insLegend"></div></div>
 </div>
-<div class="panel"><h3>账面水钱分配（合计 <span id="rakeTotal"></span>）</h3>
+<div class="panel"><h3>RAKE 分配 <span class="en">Rake Allocation（合计 <span id="rakeTotal"></span>）</span></h3>
   <div class="stack" id="rakeStack"></div><div class="legend" id="rakeLegend"></div>
 </div>
 
-<h2>表一 · 牌局结算差额表</h2>
+<h2>表一 · 牌局结算总表 <span class="en">Settlement Summary</span></h2>
 <table id="t1"></table>
 
-<h2>表二 · Arthur 的单子</h2>
+<h2>表二 · Arthur 团队账单 <span class="en">Team Arthur</span></h2>
 <table id="t2"></table>
 <div class="check" id="check2"></div>
 
-<h2>表三 · James 的单子（应收 / 应付）</h2>
+<h2>表三 · James 团队账单（应收 / 应付）<span class="en">Team James — Receivable / Payable</span></h2>
 <table id="t3"></table>
 <div class="check" id="check3"></div>
 
-<p class="note">分组：Arthur 组 = Arthur、Lu、KL、William、Zhuang；James 组 = 其余玩家。保险由 Kevin、Bill、James、Arthur 按比例分担，分担额算进各自的个人合计。</p>
+<p class="note">团队分组：Arthur 团队 = Arthur、Lu、KL、William、Zhuang；James 团队 = 其余玩家。保险公司由四位股东按比例分担，分担额算进各自的成员（成绩）。</p>
 </div>
 
 <script>
 "use strict";
 // ===== 原始数据（唯一输入源）=====
 const S = {
-  players: [ // name, 成绩, 组: A=Arthur组 J=James组
+  players: [ // name, 成绩, 团队: A=Arthur J=James
     ["Twist",8450,"J"],["A22",700,"J"],["Kent",5130,"J"],["Kevin",12700,"J"],
     ["KL",17900,"A"],["Zhuang",25700,"A"],["Pink",8200,"J"],["Brick",14600,"J"],
     ["Wu",29500,"J"],["Dan",8000,"J"],["William",7600,"A"],["Jes",24000,"J"],
@@ -101,15 +108,16 @@ const S = {
     ["Lu",-30000,"A"],["Zhao",-109000,"J"],["Xu",-14000,"J"]
   ],
   insurance: -14005,
-  shares: [["Kevin",20],["Bill",20],["James",25],["Arthur",35]], // 保险分担 %
+  shares: [["Kevin",20],["Bill",20],["James",25],["Arthur",35]], // 保险公司股东 %
   dealers: [["WeiWei",1285],["Lyne",3565],["Linna",1560]],
   massage: 1475,
-  actualRake: 36500,   // 实收水钱
+  actualRake: 36500,   // 实收 RAKE
   expense: 2800,       // 开销（房租、点餐，付给 James）
-  arthurFloat: 10000,  // Arthur 垫付
-  jamesFloat: 45900    // James 垫付
+  arthurFloat: 10000,  // Arthur 备用金
+  jamesFloat: 45900    // James 备用金
 };
 const COLORS = ["#1565c0","#ef6c00","#6a1b9a","#00838f","#ad1457","#558b2f"];
+let insOpen = false; // 股东折叠状态，渲染后保持
 const $ = id => document.getElementById(id);
 const fmt = v => {
   const r = Math.round(v*100)/100;
@@ -118,6 +126,7 @@ const fmt = v => {
 };
 const fmtS = v => (v>0?"+":"") + fmt(v);
 const cls = v => v<0 ? "neg" : (v>0 ? "pos" : "");
+const EN = t => ` <span class="en">${t}</span>`;
 function inp(path, val, clsName){
   return `<input class="${clsName||''}" data-p="${path}" type="number" step="any" value="${val}">`;
 }
@@ -127,6 +136,7 @@ function row(label, val, opt={}){
   return `<tr class="${c}"><td>${label}</td><td class="n ${cls(val)}">${opt.html!==undefined?opt.html:shown}</td></tr>`;
 }
 function sec(label){ return `<tr class="sec"><td colspan="2">${label}</td></tr>`; }
+function sub(label){ return `<tr class="sub"><td colspan="2">${label}</td></tr>`; }
 
 // ===== 计算（全部公式）=====
 function calc(){
@@ -136,19 +146,19 @@ function calc(){
   const shareAmt = {}; S.shares.forEach(([n,p])=>shareAmt[n]=S.insurance*p/100);
   const dealerSum = S.dealers.reduce((a,d)=>a+d[1],0);
   const grand = upSum+downSum+S.insurance+dealerSum+S.massage;
-  const bookRake = -grand;
-  const diff = bookRake - S.actualRake;
-  const netRake = S.actualRake - S.expense;
-  const arthurRake = netRake/2, jamesRake = netRake/2 + diff;
-  const personal = {}; S.players.forEach(p=>personal[p[0]]=p[1]);
+  const bookRake = -grand;                        // 账面 RAKE
+  const surplus = bookRake - S.actualRake;        // 多余的钱
+  const netRake = S.actualRake - S.expense;       // 净 RAKE
+  const arthurRake = netRake/2, jamesRake = netRake/2 + surplus;
+  const personal = {}; S.players.forEach(p=>personal[p[0]]=p[1]); // 成员（成绩）
   S.shares.forEach(([n])=>{ if(n in personal) personal[n]+=shareAmt[n]; });
   const gA = S.players.filter(p=>p[2]==="A");
   const gJ = S.players.filter(p=>p[2]==="J");
-  const gASum = gA.reduce((a,p)=>a+personal[p[0]],0);
-  const gJNet = gJ.reduce((a,p)=>a+personal[p[0]],0);
+  const gASum = gA.reduce((a,p)=>a+personal[p[0]],0);   // Arthur 团队成员（成绩）
+  const gJNet = gJ.reduce((a,p)=>a+personal[p[0]],0);   // James 团队成员（成绩）
   const arthurPay = gASum + S.arthurFloat + arthurRake;
-  const arthurProfit = personal["Arthur"] + arthurRake;
-  const recvHouseParts = [["水钱份额（净水钱 50%）", netRake/2],["差额（账面多出的，全归他）", diff],["开销（房租、点餐）", S.expense],["垫付退回", S.jamesFloat]];
+  const arthurNet = personal["Arthur"] + arthurRake;    // Arthur 净额
+  const recvHouseParts = [["RAKE 份额（净 RAKE 50%）", netRake/2],["多余的钱（全归 James）", surplus],["开销（房租、点餐）", S.expense],["备用金退回", S.jamesFloat]];
   const recvHouse = recvHouseParts.reduce((a,x)=>a+x[1],0);
   const losers = gJ.filter(p=>personal[p[0]]<0), winners = gJ.filter(p=>personal[p[0]]>0);
   const recvLosers = losers.reduce((a,p)=>a-personal[p[0]],0);
@@ -157,38 +167,37 @@ function calc(){
   const carry = -gJNet;
   const payTotal = payWinners + (-shareAmt["James"]) + carry;
   const jamesLeft = recvTotal - payTotal;
-  const jamesProfit = jamesLeft - S.jamesFloat;
-  const jamesProfitAlt = jamesRake + S.expense + shareAmt["James"];
-  return {score,up,down,upSum,downSum,shareAmt,dealerSum,grand,bookRake,diff,netRake,arthurRake,jamesRake,
-          personal,gA,gJ,gASum,gJNet,arthurPay,arthurProfit,recvHouseParts,recvHouse,losers,winners,
-          recvLosers,payWinners,recvTotal,carry,payTotal,jamesLeft,jamesProfit,jamesProfitAlt};
+  const jamesNet = jamesLeft - S.jamesFloat;            // James 净额
+  const jamesNetAlt = jamesRake + S.expense + shareAmt["James"];
+  return {score,up,down,upSum,downSum,shareAmt,dealerSum,grand,bookRake,surplus,netRake,arthurRake,jamesRake,
+          personal,gA,gJ,gASum,gJNet,arthurPay,arthurNet,recvHouseParts,recvHouse,losers,winners,
+          recvLosers,payWinners,recvTotal,carry,payTotal,jamesLeft,jamesNet,jamesNetAlt};
 }
 
 // ===== 仪表盘 =====
 function renderDash(C){
   const kpi = [
-    ["账面总计", C.grand, "全场成绩合计", true],
-    ["账面水钱", C.bookRake, "＝ −账面总计", false],
-    ["实收水钱", S.actualRake, "实际收上来的", false],
-    ["差额（归 James）", C.diff, "账面 − 实收", false],
-    ["净水钱", C.netRake, "实收 − 开销 " + fmt(S.expense), false]
+    ["合计 " + "Total", C.grand, "全场成绩合计", true],
+    ["账面 RAKE", C.bookRake, "＝ −合计", false],
+    ["实收 RAKE", S.actualRake, "实际收上来的 Actual", false],
+    ["多余的钱 Surplus", C.surplus, "账面 − 实收，归 James", false],
+    ["净 RAKE", C.netRake, "实收 − 开销 " + fmt(S.expense), false]
   ];
   $("kpis").innerHTML = kpi.map(([k,v,s,hero])=>
     `<div class="card${hero?" hero":""}"><div class="k">${k}</div><div class="v ${cls(v)}">${fmtS(v)}</div><div class="s">${s}</div></div>`).join("");
   $("hosts").innerHTML = `
-    <div class="host"><div class="name">Arthur（局头）</div>
-      <div class="row"><span>小组净额</span><b>${fmtS(C.gASum)}</b></div>
-      <div class="row"><span>垫付退回</span><b>${fmt(S.arthurFloat)}</b></div>
-      <div class="row"><span>水钱（50%）</span><b>${fmt(C.arthurRake)}</b></div>
-      <div class="row"><span>牌局应付</span><b>${fmt(C.arthurPay)}</b></div>
-      <div class="row"><span>本人盈利</span><b class="${cls(C.arthurProfit)}">${fmtS(C.arthurProfit)}</b></div></div>
-    <div class="host"><div class="name">James（局头）</div>
-      <div class="row"><span>应收合计</span><b>${fmt(C.recvTotal)}</b></div>
-      <div class="row"><span>应付合计</span><b>${fmt(C.payTotal)}</b></div>
+    <div class="host"><div class="name">Arthur 团队 <span class="en">Team Arthur</span></div>
+      <div class="row"><span>成员（成绩）Members</span><b>${fmtS(C.gASum)}</b></div>
+      <div class="row"><span>备用金 Float</span><b>${fmt(S.arthurFloat)}</b></div>
+      <div class="row"><span>RAKE（50%）</span><b>${fmt(C.arthurRake)}</b></div>
+      <div class="row"><span>应付 Payable</span><b>${fmt(C.arthurPay)}</b></div>
+      <div class="row"><span>净额 Net</span><b class="${cls(C.arthurNet)}">${fmtS(C.arthurNet)}</b></div></div>
+    <div class="host"><div class="name">James 团队 <span class="en">Team James</span></div>
+      <div class="row"><span>应收 Receivable</span><b>${fmt(C.recvTotal)}</b></div>
+      <div class="row"><span>应付 Payable</span><b>${fmt(C.payTotal)}</b></div>
       <div class="row"><span>手里留下</span><b>${fmt(C.jamesLeft)}</b></div>
-      <div class="row"><span>其中垫付退回</span><b>${fmt(S.jamesFloat)}</b></div>
-      <div class="row"><span>本人盈利</span><b class="${cls(C.jamesProfit)}">${fmtS(C.jamesProfit)}</b></div></div>`;
-  // 成绩条形图（按成绩从大到小）
+      <div class="row"><span>其中备用金退回 Float</span><b>${fmt(S.jamesFloat)}</b></div>
+      <div class="row"><span>净额 Net</span><b class="${cls(C.jamesNet)}">${fmtS(C.jamesNet)}</b></div></div>`;
   const sorted = [...S.players].sort((a,b)=>b[1]-a[1]);
   const maxAbs = Math.max(...S.players.map(p=>Math.abs(p[1]))) || 1;
   $("scoreChart").innerHTML = sorted.map(p=>{
@@ -200,7 +209,6 @@ function renderDash(C){
       <div class="bar-fill" style="left:${left}%;width:${w}%;background:${color}"></div></div>
       <div class="bar-val ${cls(p[1])}">${fmtS(p[1])}</div></div>`;
   }).join("");
-  // 保险环图
   $("insTotal").textContent = fmtS(S.insurance);
   const totalPct = S.shares.reduce((a,s)=>a+s[1],0) || 1;
   let acc = 0, segs = "";
@@ -213,10 +221,9 @@ function renderDash(C){
   });
   $("insDonut").innerHTML = `<svg width="140" height="140" viewBox="0 0 140 140">${segs}
     <text x="70" y="66" text-anchor="middle" font-size="15" font-weight="800">${fmt(S.insurance)}</text>
-    <text x="70" y="86" text-anchor="middle" font-size="11" fill="#777">保险总成绩</text></svg>`;
+    <text x="70" y="86" text-anchor="middle" font-size="11" fill="#777">保险成绩</text></svg>`;
   $("insLegend").innerHTML = S.shares.map(([n,p],i)=>
     `<span class="dot" style="background:${COLORS[i%COLORS.length]}"></span>${n} ${p}% ＝ <b>${fmtS(C.shareAmt[n])}</b>`).join("<br>");
-  // 水钱分配条
   $("rakeTotal").textContent = fmt(C.bookRake);
   const parts = [["Arthur " + fmt(C.arthurRake), C.arthurRake, "#2e7d32"],
                  ["James " + fmt(C.jamesRake), C.jamesRake, "#1565c0"],
@@ -224,82 +231,102 @@ function renderDash(C){
   const tot = parts.reduce((a,x)=>a+x[1],0) || 1;
   $("rakeStack").innerHTML = parts.map(([l,v,c])=>
     `<div style="width:${v/tot*100}%;background:${c}">${v/tot>0.12?l:""}</div>`).join("");
-  $("rakeLegend").innerHTML = parts.map(([l,v,c])=>`<span class="dot" style="background:${c}"></span>${l}`).join("");
+  $("rakeLegend").innerHTML = parts.map(([l,v,c])=>`<span class="dot" style="background:${c}"></span>${l}`).join("") +
+    `<br><span class="formula">James 的 RAKE ＝ 净 RAKE 50% ${fmt(C.netRake/2)} ＋ 多余的钱 ${fmt(C.surplus)}</span>`;
 }
 
 // ===== 表格 =====
+function insNote(n, C){
+  return S.shares.some(([x])=>x===n) ? ` <span class="formula">（成绩 ${fmtS(C.score[n])} ＋ 保险 ${fmtS(C.shareAmt[n])}）</span>` : "";
+}
 function render(){
   const C = calc();
   renderDash(C);
-  let h = sec("水上玩家（赢）");
+  // 表一：玩家 → 保险公司 → 荷官 → 杂项 → 合计 → RAKE
+  let h = sec("一、玩家" + EN("Players"));
+  h += sub("水上（赢）Winners");
   C.up.forEach(p=>h+=row(p[0], p[1], {signed:true, html: inp(`pl.${p[0]}`, p[1])}));
   h += row("水上小计", C.upSum, {cls:"tot", signed:true});
-  h += sec("水下玩家（输）");
+  h += sub("水下（输）Losers");
   C.down.forEach(p=>h+=row(p[0], p[1], {signed:true, html: inp(`pl.${p[0]}`, p[1])}));
   h += row("水下小计", C.downSum, {cls:"tot", signed:true});
-  h += sec("保险");
-  h += row("保险总成绩", S.insurance, {signed:true, html: inp("insurance", S.insurance)});
-  S.shares.forEach(([n,p])=>{ h += `<tr><td>┗ ${n} <input class="pct" data-p="sh.${n}" type="number" step="any" value="${p}">%</td><td class="n ${cls(C.shareAmt[n])}">${fmtS(C.shareAmt[n])}</td></tr>`; });
-  h += sec("荷官小费");
+  h += row("玩家合计", C.upSum + C.downSum, {cls:"tot", signed:true});
+  h += sec("二、保险公司" + EN("Insurance Company"));
+  h += row("保险成绩", S.insurance, {signed:true, html: inp("insurance", S.insurance)});
+  $("t1").innerHTML = h;
+  document.querySelectorAll("#shareBox,#t1b").forEach(e=>e.remove());
+  // 股东（可折叠，单独一块插在表一里）
+  const det = document.createElement("details");
+  det.className = "sharebox"; det.open = insOpen; det.id = "shareBox";
+  det.innerHTML = `<summary>股东分担 Shareholders（点击展开 / 收起）— ${S.shares.map(([n,p])=>`${n} ${p}%`).join(" · ")}</summary>
+    <table>${S.shares.map(([n,p])=>`<tr><td>┗ ${n} <input class="pct" data-p="sh.${n}" type="number" step="any" value="${p}">%</td><td class="n ${cls(C.shareAmt[n])}">${fmtS(C.shareAmt[n])}</td></tr>`).join("")}
+    <tr class="tot"><td>股东分担合计（应 = 保险成绩）</td><td class="n">${fmtS(S.shares.reduce((a,[n])=>a+C.shareAmt[n],0))}</td></tr></table>`;
+  $("t1").after(det);
+  det.addEventListener("toggle", ()=>{ insOpen = det.open; });
+  h = sec("三、荷官" + EN("Dealers · Tips"));
   S.dealers.forEach(d=>h+=row(d[0], d[1], {signed:true, html: inp(`dl.${d[0]}`, d[1])}));
   h += row("荷官小计", C.dealerSum, {cls:"tot", signed:true});
-  h += row("按摩", S.massage, {signed:true, html: inp("massage", S.massage)});
-  h += row("账面总计", C.grand, {cls:"grand", signed:true});
-  h += row("账面水钱（= −账面总计）", C.bookRake, {});
-  h += row("实收水钱", S.actualRake, {html: inp("actualRake", S.actualRake)});
-  h += row("差额（账面水钱 − 实收水钱，归 James）", C.diff, {cls:"tot"});
-  h += row("开销（房租、点餐，付给 James）", S.expense, {html: inp("expense", S.expense)});
-  h += row("净水钱（实收 − 开销）", C.netRake, {cls:"tot"});
-  h += sec("账面水钱分配");
-  h += row("┗ Arthur（净水钱 50%）", C.arthurRake, {});
-  h += row("┗ James（净水钱 50% ＋ 差额）", C.jamesRake, {});
+  h += sec("四、杂项" + EN("Misc"));
+  h += row("按摩 Massage", S.massage, {signed:true, html: inp("massage", S.massage)});
+  h += sec("五、合计" + EN("Total"));
+  h += row("账面总计 Grand Total", C.grand, {cls:"grand", signed:true});
+  h += sec("六、RAKE");
+  h += row("账面 RAKE（= −合计）", C.bookRake, {});
+  h += row("实收 RAKE Actual", S.actualRake, {html: inp("actualRake", S.actualRake)});
+  h += row("多余的钱 Surplus（账面 − 实收，归 James）", C.surplus, {cls:"tot"});
+  h += row("开销 Expenses（房租、点餐，付给 James）", S.expense, {html: inp("expense", S.expense)});
+  h += row("净 RAKE Net（实收 − 开销）", C.netRake, {cls:"tot"});
+  h += sub("RAKE 分配 Allocation");
+  h += row("┗ Arthur 团队（净 RAKE 50%）", C.arthurRake, {});
+  h += row("┗ James 团队（净 RAKE 50% ＋ 多余的钱）", C.jamesRake, {});
   h += row("┗ 开销（James）", S.expense, {});
-  h += row("分配合计（应 = 账面水钱）", C.arthurRake + C.jamesRake + S.expense, {cls:"tot"});
-  $("t1").innerHTML = h;
+  h += row("分配合计（应 = 账面 RAKE）", C.arthurRake + C.jamesRake + S.expense, {cls:"tot"});
+  const t1b = document.createElement("table");
+  t1b.innerHTML = h; t1b.id = "t1b";
+  det.after(t1b);
 
-  h = sec("小组成绩（成绩＋各自保险）");
+  // 表二 Arthur 团队
+  h = sec("成员（成绩）" + EN("Members (Score)"));
   C.gA.forEach(p=>{
-    const extra = S.shares.some(([n])=>n===p[0]) ? ` <span class="formula">（成绩 ${fmtS(p[1])} ＋ 保险 ${fmtS(C.shareAmt[p[0]])}）</span>` : "";
-    h += `<tr><td>${p[0]}${extra}</td><td class="n ${cls(C.personal[p[0]])}">${fmtS(C.personal[p[0]])}</td></tr>`;
+    h += `<tr><td>${p[0]}${insNote(p[0], C)}</td><td class="n ${cls(C.personal[p[0]])}">${fmtS(C.personal[p[0]])}</td></tr>`;
   });
-  h += row("小组净额", C.gASum, {cls:"tot", signed:true});
-  h += row("垫付退回", S.arthurFloat, {html: inp("arthurFloat", S.arthurFloat)});
-  h += row("水钱（净水钱 50%）", C.arthurRake, {});
-  h += row("牌局应付 Arthur", C.arthurPay, {cls:"grand"});
-  h += row("Arthur 本人盈利（个人合计 ＋ 水钱）", C.arthurProfit, {cls:"tot", signed:true});
+  h += row("成员（成绩）合计", C.gASum, {cls:"tot", signed:true});
+  h += row("备用金退回 Float", S.arthurFloat, {html: inp("arthurFloat", S.arthurFloat)});
+  h += row("RAKE（净 RAKE 50%）", C.arthurRake, {});
+  h += row("应付 Payable", C.arthurPay, {cls:"grand"});
+  h += row("Arthur 净额 Net（成员（成绩）＋ RAKE）", C.arthurNet, {cls:"tot", signed:true});
   $("t2").innerHTML = h;
-  $("check2").innerHTML = `对账：小组净额 ${fmtS(C.gASum)} ＋ 垫付 ${fmt(S.arthurFloat)} ＋ 水钱 ${fmt(C.arthurRake)} ＝ 应付 <b>${fmt(C.arthurPay)}</b>`;
+  $("check2").innerHTML = `对账：成员（成绩）${fmtS(C.gASum)} ＋ 备用金 ${fmt(S.arthurFloat)} ＋ RAKE ${fmt(C.arthurRake)} ＝ 应付 <b>${fmt(C.arthurPay)}</b>`;
 
-  h = sec("应该收的");
+  // 表三 James 团队
+  h = sec("应该收的" + EN("Receivable"));
   C.recvHouseParts.forEach(([l,v])=>h+=row(l, v, {}));
   h += row("牌局小计", C.recvHouse, {cls:"tot"});
   C.losers.forEach(p=>{
-    const extra = S.shares.some(([n])=>n===p[0]) ? ` <span class="formula">（成绩 ${fmtS(p[1])} ＋ 保险 ${fmtS(C.shareAmt[p[0]])}）</span>` : "";
-    h += `<tr><td>${p[0]}（输）${extra}</td><td class="n">${fmt(-C.personal[p[0]])}</td></tr>`;
+    h += `<tr><td>${p[0]}（输）${insNote(p[0], C)}</td><td class="n">${fmt(-C.personal[p[0]])}</td></tr>`;
   });
   h += row("组里小计", C.recvLosers, {cls:"tot"});
-  h += row("应收合计", C.recvTotal, {cls:"grand"});
-  h += sec("应该付的");
+  h += row("应收合计 Receivable", C.recvTotal, {cls:"grand"});
+  h += sec("应该付的" + EN("Payable"));
   C.winners.forEach(p=>{
-    const extra = S.shares.some(([n])=>n===p[0]) ? ` <span class="formula">（成绩 ${fmtS(p[1])} ＋ 保险 ${fmtS(C.shareAmt[p[0]])}）</span>` : "";
-    h += `<tr><td>${p[0]}${extra}</td><td class="n">${fmt(C.personal[p[0]])}</td></tr>`;
+    h += `<tr><td>${p[0]}${insNote(p[0], C)}</td><td class="n">${fmt(C.personal[p[0]])}</td></tr>`;
   });
   h += row("赢家小计", C.payWinners, {cls:"tot"});
-  h += row("他自己的保险（25%）", -C.shareAmt["James"], {});
-  h += row("结转牌局（组里收的净钱上交）", C.carry, {});
-  h += row("应付合计", C.payTotal, {cls:"grand"});
-  h += row("垫付退回（James）", S.jamesFloat, {html: inp("jamesFloat", S.jamesFloat)});
+  h += row("他自己的保险（股东 25%）", -C.shareAmt["James"], {});
+  h += row("结转牌局（团队收的净钱上交）", C.carry, {});
+  h += row("应付合计 Payable", C.payTotal, {cls:"grand"});
+  h += row("备用金（James）Float", S.jamesFloat, {html: inp("jamesFloat", S.jamesFloat)});
   $("t3").innerHTML = h;
-  const ok1 = Math.abs(C.jamesProfit - C.jamesProfitAlt) < 0.005;
+  const ok1 = Math.abs(C.jamesNet - C.jamesNetAlt) < 0.005;
   $("check3").innerHTML =
-    `应收 ${fmt(C.recvTotal)} − 应付 ${fmt(C.payTotal)} ＝ <b>${fmt(C.jamesLeft)}</b> 留在他手里；其中 ${fmt(S.jamesFloat)} 是他垫的钱，<b>${fmt(C.jamesProfit)} 是他赚的</b>。<br>` +
-    `交叉验证：水钱 ${fmt(C.jamesRake)} ＋ 开销 ${fmt(S.expense)} − 保险 ${fmt(-C.shareAmt["James"])} ＝ ${fmt(C.jamesProfitAlt)} ` +
+    `应收 ${fmt(C.recvTotal)} − 应付 ${fmt(C.payTotal)} ＝ <b>${fmt(C.jamesLeft)}</b> 留在他手里；其中 ${fmt(S.jamesFloat)} 是备用金，<b>${fmt(C.jamesNet)} 是他的净额 Net</b>。<br>` +
+    `交叉验证：RAKE ${fmt(C.jamesRake)} ＋ 开销 ${fmt(S.expense)} − 保险 ${fmt(-C.shareAmt["James"])} ＝ ${fmt(C.jamesNetAlt)} ` +
     (ok1 ? `<span class="ok">✓ 两种算法一致</span>` : `<span class="bad">✗ 两种算法对不上</span>`);
   bindInputs();
 }
 function bindInputs(){
   document.querySelectorAll("input[data-p]").forEach(el=>{
-    el.addEventListener("input", ()=>{
+    el.addEventListener("change", ()=>{
       const v = parseFloat(el.value); if(isNaN(v)) return;
       const [kind, key] = el.dataset.p.split(".");
       if(kind==="pl"){ const p = S.players.find(x=>x[0]===key); p[1]=v; }
